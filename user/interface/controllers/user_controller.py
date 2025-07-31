@@ -1,12 +1,14 @@
 from dependency_injector.wiring import inject, Provide
 from containers import Container
-
 from typing import Annotated
 from fastapi import APIRouter, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel,EmailStr, Field
 from datetime import datetime
-
 from user.application.user_service import UserService
+
+
+
 
 router = APIRouter(prefix="/users")
 
@@ -85,4 +87,17 @@ def delete_user(
     user_id: str,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
-    user_service.delete_user(user_id)
+    user_service.delete_user(user_id) 
+
+@router.post("/login")
+@inject
+def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    user_service: UserService = Depends(Provide[Container.user_service]),
+):
+    access_token = user_service.login(
+        email=form_data.username,
+        password=form_data.password,
+    )
+
+    return {"access_token" : access_token, "token_type" : "bearer"}
